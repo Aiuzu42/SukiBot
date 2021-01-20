@@ -1,0 +1,12 @@
+{
+    "logLevel" : "",
+    "token" : "",
+    "users" : {
+        "owners" : [],
+        "admins" : []
+    },
+    "customSays" : [{
+        "commandName" : "",
+        "channel" : ""
+    }]
+}
