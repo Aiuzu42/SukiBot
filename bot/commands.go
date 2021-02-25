@@ -2,6 +2,7 @@ package bot
 
 import (
 	"strings"
+	"time"
 
 	"github.com/aiuzu42/SukiBot/config"
 	"github.com/bwmarrin/discordgo"
@@ -32,6 +33,16 @@ func CommandsHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			reloadConfigCommand(s, m.ChannelID, m.ID, m.Author.ID)
 		case "setStatus":
 			setStatus(s, m, r)
+		}
+	} else {
+		for _, t := range config.Config.Triggers {
+			if !t.AllowsChannel(m.ChannelID) {
+				continue
+			}
+			if (t.CaseSensitive && strings.Contains(m.Content, t.Trigger)) || (!t.CaseSensitive && strings.Contains(strings.ToLower(m.Content), t.Trigger)) {
+				triggerResponse(s, m.ChannelID, t)
+				break
+			}
 		}
 	}
 }
@@ -89,6 +100,17 @@ func sendMessage(s *discordgo.Session, channelID string, msg string, logMsg stri
 	}
 }
 
+func sendSimpleEmbedMessage(s *discordgo.Session, channelID string, msg string, color int, image string, logMsg string) {
+	me := discordgo.MessageEmbed{Description: msg, Color: color}
+	if image != "" {
+		me.Image = &discordgo.MessageEmbedImage{URL: image}
+	}
+	_, err := s.ChannelMessageSendEmbed(channelID, &me)
+	if err != nil {
+		log.Error(logMsg + "Error sending message [" + msg + "]: " + err.Error())
+	}
+}
+
 func setStatus(s *discordgo.Session, m *discordgo.MessageCreate, r []rune) {
 	if !IsAdmin(m.Member.Roles, m.Author.ID) {
 		log.Warn("[setStatus]User: " + m.Author.ID + " tried to use command setStatus without permission.")
@@ -102,5 +124,16 @@ func setStatus(s *discordgo.Session, m *discordgo.MessageCreate, r []rune) {
 	err = s.UpdateStatus(0, msg)
 	if err != nil {
 		log.Error("[setStatus]Unable to update status: " + err.Error())
+	}
+}
+
+func triggerResponse(s *discordgo.Session, ch string, t config.Trigger) {
+	now := time.Now()
+	r, ok := t.CooldownMap[ch]
+	if !ok || (ok && r+t.Cooldown <= now.Unix()) {
+		sendSimpleEmbedMessage(s, ch, t.Response, t.Color, t.Image, "[triggerResponse]")
+		t.CooldownMap[ch] = now.Unix()
+	} else {
+		log.Infof("[triggerResponse]Trigger in timer, now: %d, map: %d, cd: %d", now.Unix(), r, t.Cooldown)
 	}
 }

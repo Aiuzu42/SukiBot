@@ -18,6 +18,7 @@ type configuration struct {
 	Token      string      `json:"token"`
 	Users      UsersConfig `json:"users"`
 	CustomSays []CustomCMD `json:"customSays"`
+	Triggers   []Trigger   `json:"triggers"`
 }
 
 type UsersConfig struct {
@@ -28,6 +29,29 @@ type UsersConfig struct {
 type CustomCMD struct {
 	Name    string `json:"commandName"`
 	Channel string `json:"channel"`
+}
+
+type Trigger struct {
+	Trigger       string   `json:"trigger"`
+	Channels      []string `json:"channels"`
+	Response      string   `json:"response"`
+	Image         string   `json:"image"`
+	Color         int      `json:"color"`
+	CaseSensitive bool     `json:"caseSensitive"`
+	Cooldown      int64    `json:"cooldown"`
+	CooldownMap   map[string]int64
+}
+
+func (t Trigger) AllowsChannel(ch string) bool {
+	if len(t.Channels) == 0 {
+		return true
+	}
+	for _, e := range t.Channels {
+		if e == ch {
+			return true
+		}
+	}
+	return false
 }
 
 var Config configuration
@@ -71,6 +95,9 @@ func loadConfig() (configuration, error) {
 	err = json.NewDecoder(file).Decode(&localConfig)
 	if err != nil {
 		return configuration{}, errors.New("Error parsing configuration file [" + err.Error() + "]")
+	}
+	for i := range localConfig.Triggers {
+		localConfig.Triggers[i].CooldownMap = make(map[string]int64)
 	}
 	return localConfig, nil
 }

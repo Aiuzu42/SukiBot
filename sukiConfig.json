@@ -8,5 +8,14 @@
     "customSays" : [{
         "commandName" : "",
         "channel" : ""
+    }],
+    "triggers" : [{
+        "trigger" : "",
+        "channels" : [],
+        "response" : "",
+        "image" : "",
+        "color" : 0,
+        "caseSensitive" : false,
+        "cooldown" : 0
     }]
 }
