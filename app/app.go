@@ -21,7 +21,6 @@ func StartApp() {
 	if err != nil {
 		log.Fatal("[StartApp]Error starting up discordgo: " + err.Error())
 	}
-	b.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
 	b.AddHandler(bot.CommandsHandler)
 	err = b.Open()
 	if err != nil {
