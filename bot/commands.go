@@ -32,7 +32,11 @@ func CommandsHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		case "reloadConfig":
 			reloadConfigCommand(s, m.ChannelID, m.ID, m.Author.ID)
 		case "setStatus":
-			setStatus(s, m, r)
+			setGameStatus(s, m, args)
+		case "setListenStatus":
+			setListenStatus(s, m, args)
+		case "setStreamStatus":
+			setStreamStatus(s, m, args)
 		}
 	} else {
 		for _, t := range config.Config.Triggers {
@@ -111,19 +115,72 @@ func sendSimpleEmbedMessage(s *discordgo.Session, channelID string, msg string, 
 	}
 }
 
-func setStatus(s *discordgo.Session, m *discordgo.MessageCreate, r []rune) {
+func setGameStatus(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if !IsAdmin(m.Member.Roles, m.Author.ID) {
-		log.Warn("[setStatus]User: " + m.Author.ID + " tried to use command setStatus without permission.")
+		log.Warn("[setGameStatus]User: " + m.Author.ID + " tried to use command setGameStatus without permission.")
+		return
+	}
+	if len(args) < 2 {
+		log.Error("[setGameStatus][1]Invalid number of arguments")
+		sendMessage(s, m.ChannelID, "Numero de argumentos incorrecto, favor de revisar el comando", "[setGameStatus][1]")
 		return
 	}
 	err := s.ChannelMessageDelete(m.ChannelID, m.ID)
 	if err != nil {
-		log.Error("[setStatus]Unable to delete message: " + err.Error())
+		log.Error("[setGameStatus]Unable to delete message: " + err.Error())
 	}
-	msg := string(r[pLen+10:])
+	msg := strings.Join(args[1:], " ")
 	err = s.UpdateGameStatus(0, msg)
 	if err != nil {
-		log.Error("[setStatus]Unable to update status: " + err.Error())
+		log.Error("[setGameStatus]Unable to update status: " + err.Error())
+	}
+}
+
+func setListenStatus(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if !IsAdmin(m.Member.Roles, m.Author.ID) {
+		log.Warn("[setListenStatus]User: " + m.Author.ID + " tried to use command setListenStatus without permission.")
+		return
+	}
+	if len(args) < 2 {
+		log.Error("[setListenStatus][1]Invalid number of arguments")
+		sendMessage(s, m.ChannelID, "Numero de argumentos incorrecto, favor de revisar el comando", "[setListenStatus][1]")
+		return
+	}
+	err := s.ChannelMessageDelete(m.ChannelID, m.ID)
+	if err != nil {
+		log.Error("[setListenStatus]Unable to delete message: " + err.Error())
+	}
+	msg := strings.Join(args[1:], " ")
+	err = s.UpdateListeningStatus(msg)
+	if err != nil {
+		log.Error("[setListenStatus]Unable to update status: " + err.Error())
+	}
+}
+
+func setStreamStatus(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if !IsAdmin(m.Member.Roles, m.Author.ID) {
+		log.Warn("[setStreamStatus]User: " + m.Author.ID + " tried to use command setStreamStatus without permission.")
+		return
+	}
+	if len(args) < 3 {
+		log.Error("[setStreamStatus][1]Invalid number of arguments")
+		sendMessage(s, m.ChannelID, "Numero de argumentos incorrecto, favor de revisar el comando", "[setStreamStatus][1]")
+		return
+	}
+	url := args[1]
+	msg := strings.Join(args[2:], " ")
+	if url == "" && msg == "" {
+		log.Error("[setStreamStatus][2]Invalid number of arguments")
+		sendMessage(s, m.ChannelID, "Numero de argumentos incorrecto, favor de revisar el comando", "[setStreamStatus][2]")
+		return
+	}
+	err := s.ChannelMessageDelete(m.ChannelID, m.ID)
+	if err != nil {
+		log.Error("[setStreamStatus]Unable to delete message: " + err.Error())
+	}
+	err = s.UpdateStreamingStatus(0, msg, url)
+	if err != nil {
+		log.Error("[setStreamStatus]Unable to update status: " + err.Error())
 	}
 }
 
